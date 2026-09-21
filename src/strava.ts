@@ -1,4 +1,5 @@
 import type { LiftTraceWorkout } from './lifttrace';
+import { musclesWorked } from './muscles';
 
 const TOKEN_URL = 'https://www.strava.com/oauth/token';
 const ACTIVITIES_URL = 'https://www.strava.com/api/v3/activities';
@@ -96,12 +97,19 @@ export function buildStravaActivity(workout: LiftTraceWorkout, completedAtIso: s
 	// actually finished, bounded by however accurate elapsedSeconds is.
 	const startDateLocal = new Date(new Date(completedAtIso).getTime() - elapsedSeconds * 1000).toISOString();
 
+	// Strava's activity API has no muscle-group field at all — this is
+	// folded into the description text instead. Exercises with no entry
+	// in MUSCLE_MAP (a program change, a one-off) are silently skipped
+	// rather than blocking the whole line.
+	const muscles = musclesWorked(workout.exercises.map((ex) => ex.exercise_name));
+	const description = muscles.length > 0 ? `${lines.join('\n')}\n\nMuscles worked: ${muscles.join(', ')}` : lines.join('\n');
+
 	return {
 		name: workout.name || 'Workout',
 		sport_type: 'WeightTraining',
 		start_date_local: startDateLocal,
 		elapsed_time: elapsedSeconds,
-		description: lines.join('\n'),
+		description,
 	};
 }
 

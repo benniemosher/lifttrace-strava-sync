@@ -83,7 +83,7 @@ describe('buildStravaActivity', () => {
 		expect(activity.name).toBe('Pull');
 		expect(activity.sport_type).toBe('WeightTraining');
 		expect(activity.elapsed_time).toBe(45 * 60); // default, duration_min was null
-		expect(activity.description).toBe('Lat Pulldown (Machine): 140x15, 140x12');
+		expect(activity.description).toBe('Lat Pulldown (Machine): 140x15, 140x12\n\nMuscles worked: Latissimus dorsi');
 		// start = completedAt - elapsed
 		expect(activity.start_date_local).toBe(new Date('2026-09-21T17:15:00.000Z').toISOString());
 	});
@@ -118,5 +118,34 @@ describe('buildStravaActivity', () => {
 			'2026-09-21T18:00:00.000Z',
 		);
 		expect(activity.name).toBe('Workout');
+	});
+
+	it('dedupes muscles across exercises and skips an unmapped exercise silently', () => {
+		const mk = (name: string) => ({
+			exercise_id: 1,
+			exercise_name: name,
+			superset_id: null,
+			set_type: null,
+			sets: [{ reps: 10, weight: 100, completed: true, warmup: false, rpe: null, duration_sec: null }],
+		});
+		const activity = buildStravaActivity(
+			{
+				date: '2026-09-21',
+				logged: true,
+				name: 'Push',
+				completed: true,
+				duration_min: 45,
+				exercises: [
+					mk('Chest Press'), // Pectoralis major
+					mk('Dumbbell Shoulder Press'), // Shoulders — also hits Triceps as secondary, ignored (primary only)
+					mk('Some Brand New Machine Nobody Mapped Yet'), // not in MUSCLE_MAP at all
+				],
+			},
+			'2026-09-21T18:00:00.000Z',
+		);
+		// One line per exercise, still — the unmapped one contributes no
+		// muscle-line text but isn't dropped from the set/rep log itself.
+		expect(activity.description).toContain('Some Brand New Machine Nobody Mapped Yet: 100x10');
+		expect(activity.description).toMatch(/Muscles worked: Pectoralis major, Shoulders$/);
 	});
 });
