@@ -244,12 +244,21 @@ const UPLOAD_POLL_MAX_ATTEMPTS = 10;
  * whose `activity_id` is what actually shows up on the athlete's feed
  * with the muscle-map visualization. */
 export async function uploadSetMessages(accessToken: string, activity: StravaSetMessagesActivity): Promise<StravaUploadStatus> {
+	// A fixed upload filename left external_id defaulting to the same
+	// value ("workout.json") on every call, and Strava silently treats a
+	// repeat external_id as a duplicate — it returns the *original*
+	// upload's cached result without reprocessing the new file, so a
+	// corrected retry (e.g. a fixed timestamp) would appear to succeed
+	// while actually changing nothing. A fresh id per call avoids that.
+	const externalId = `lifttrace-${crypto.randomUUID()}`;
+
 	const form = new FormData();
-	form.append('file', new Blob([JSON.stringify(activity.json)], { type: 'application/json' }), 'workout.json');
+	form.append('file', new Blob([JSON.stringify(activity.json)], { type: 'application/json' }), `${externalId}.json`);
 	form.append('data_type', 'json');
 	form.append('name', activity.name);
 	form.append('description', activity.description);
 	form.append('sport_type', 'WeightTraining');
+	form.append('external_id', externalId);
 
 	const res = await fetch(UPLOADS_URL, {
 		method: 'POST',
