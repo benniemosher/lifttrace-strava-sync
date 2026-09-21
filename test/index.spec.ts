@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { createHmac } from 'node:crypto';
 import worker from '../src/index';
 import { verifyLiftTraceSignature } from '../src/hmac';
-import { buildStravaActivity } from '../src/strava';
+import { buildSetMessages, buildStravaActivity } from '../src/strava';
 
 const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
 
@@ -147,5 +147,121 @@ describe('buildStravaActivity', () => {
 		// muscle-line text but isn't dropped from the set/rep log itself.
 		expect(activity.description).toContain('Some Brand New Machine Nobody Mapped Yet: 100x10');
 		expect(activity.description).toMatch(/Muscles worked: Pectoralis major, Shoulders$/);
+	});
+});
+
+describe('buildSetMessages', () => {
+	const mkSet = (reps: number, weight: number) => ({ reps, weight, completed: true, warmup: false, rpe: null, duration_sec: null });
+
+	it('converts weight to kg and maps reps for a mapped exercise', () => {
+		const setMessages = buildSetMessages(
+			{
+				date: '2026-09-21',
+				logged: true,
+				name: 'Pull',
+				completed: true,
+				duration_min: 45,
+				exercises: [
+					{
+						exercise_id: 1,
+						exercise_name: 'Lat Pulldown (Machine)',
+						superset_id: null,
+						set_type: null,
+						sets: [mkSet(15, 140), mkSet(12, 140)],
+					},
+				],
+			},
+			'2026-09-21T18:00:00.000Z',
+		);
+
+		expect(setMessages).not.toBeNull();
+		expect(setMessages!.json.version).toBe('1.0');
+		expect(setMessages!.json.elapsed_time).toBe(45 * 60);
+		expect(typeof setMessages!.json.utc_offset).toBe('number');
+		expect(setMessages!.json.sets).toEqual([
+			{ exercise_type: 'LAT_PULLDOWN', repetitions: 15, weight: 63.5 },
+			{ exercise_type: 'LAT_PULLDOWN', repetitions: 12, weight: 63.5 },
+		]);
+		expect(setMessages!.name).toBe('Pull');
+	});
+
+	it('carries duration_sec instead of weight/reps for a timed exercise', () => {
+		const setMessages = buildSetMessages(
+			{
+				date: '2026-09-21',
+				logged: true,
+				name: 'Pull',
+				completed: true,
+				duration_min: 45,
+				exercises: [
+					{
+						exercise_id: 2,
+						exercise_name: 'Dead Hang',
+						superset_id: null,
+						set_type: 'time',
+						sets: [{ reps: null, weight: null, completed: true, warmup: false, rpe: null, duration_sec: 20 }],
+					},
+				],
+			},
+			'2026-09-21T18:00:00.000Z',
+		);
+
+		expect(setMessages!.json.sets).toEqual([{ exercise_type: 'DEAD_HANG', duration: 20 }]);
+	});
+
+	it('skips an unmapped exercise from the structured sets array but keeps it in the description', () => {
+		const setMessages = buildSetMessages(
+			{
+				date: '2026-09-21',
+				logged: true,
+				name: 'Pull',
+				completed: true,
+				duration_min: 45,
+				exercises: [
+					{
+						exercise_id: 1,
+						exercise_name: 'Lat Pulldown (Machine)',
+						superset_id: null,
+						set_type: null,
+						sets: [mkSet(15, 140)],
+					},
+					{
+						exercise_id: 3,
+						exercise_name: 'Some Brand New Machine Nobody Mapped Yet',
+						superset_id: null,
+						set_type: null,
+						sets: [mkSet(10, 100)],
+					},
+				],
+			},
+			'2026-09-21T18:00:00.000Z',
+		);
+
+		expect(setMessages!.json.sets).toHaveLength(1);
+		expect(setMessages!.description).toContain('Some Brand New Machine Nobody Mapped Yet: 100x10');
+	});
+
+	it('returns null when no exercise in the workout has a Strava mapping', () => {
+		const setMessages = buildSetMessages(
+			{
+				date: '2026-09-21',
+				logged: true,
+				name: 'Pull',
+				completed: true,
+				duration_min: 45,
+				exercises: [
+					{
+						exercise_id: 3,
+						exercise_name: 'Some Brand New Machine Nobody Mapped Yet',
+						superset_id: null,
+						set_type: null,
+						sets: [mkSet(10, 100)],
+					},
+				],
+			},
+			'2026-09-21T18:00:00.000Z',
+		);
+
+		expect(setMessages).toBeNull();
 	});
 });

@@ -1,6 +1,14 @@
 import { verifyLiftTraceSignature } from './hmac';
 import type { LiftTraceWebhookEnvelope } from './lifttrace';
-import { buildStravaActivity, createStravaActivity, exchangeCodeForTokens, getFreshAccessToken, saveTokens } from './strava';
+import {
+	buildSetMessages,
+	buildStravaActivity,
+	createStravaActivity,
+	exchangeCodeForTokens,
+	getFreshAccessToken,
+	saveTokens,
+	uploadSetMessages,
+} from './strava';
 
 const STRAVA_AUTHORIZE_URL = 'https://www.strava.com/oauth/authorize';
 
@@ -78,6 +86,18 @@ export default {
 
 			try {
 				const accessToken = await getFreshAccessToken(env.STRAVA_TOKENS, env.STRAVA_CLIENT_ID, env.STRAVA_CLIENT_SECRET);
+
+				// Prefer the Set Messages upload — it's the only format Strava
+				// renders as the visual muscle-map. Fall back to the plain
+				// create-activity endpoint when none of the session's exercises
+				// have a Strava exercise_type mapping (buildSetMessages returns
+				// null), so a workout still gets posted either way.
+				const setMessages = buildSetMessages(envelope.data, envelope.timestamp);
+				if (setMessages) {
+					const upload = await uploadSetMessages(accessToken, setMessages);
+					return json({ ok: true, strava_upload: upload });
+				}
+
 				const activity = buildStravaActivity(envelope.data, envelope.timestamp);
 				const created = await createStravaActivity(accessToken, activity);
 				return json({ ok: true, strava_activity: created });
