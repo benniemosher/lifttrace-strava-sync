@@ -28,7 +28,9 @@ export const EXERCISE_TYPE_MAP: Record<string, string> = {
 	'Tricep Pushdown (Cable, Straight Bar)': 'CABLE_TRICEPS_PUSHDOWN',
 	'Incline Chest Press (Machine)': 'MACHINE_INCLINE_CHEST_PRESS',
 	'Incline Dumbbell Bench Press': 'INCLINE_DUMBBELL_BENCH_PRESS',
+	'Dumbbell Bench Press': 'DUMBBELL_BENCH_PRESS',
 	'Bicep Curl (Machine)': 'MACHINE_BICEP_CURL',
+	'Face Pull': 'FACE_PULL',
 
 	// Pull
 	'Rear Delt Fly (Machine)': 'MACHINE_REAR_DELT_REVERSE_FLY',
@@ -47,6 +49,7 @@ export const EXERCISE_TYPE_MAP: Record<string, string> = {
 	'Leg Extension': 'MACHINE_LEG_EXTENSION',
 	'Seated Leg Curl': 'MACHINE_LEG_CURL_SEATED',
 	'Calf Raise (Machine)': 'CALF_RAISE_GENERIC',
+	'Calf Press': 'MACHINE_CALF_PRESS',
 	Adductor: 'MACHINE_HIP_ADDUCTION',
 	'Hip Abductor (Machine)': 'MACHINE_HIP_ABDUCTION',
 	'Squat (Smith Machine)': 'SMITH_MACHINE_SQUAT',
@@ -58,10 +61,14 @@ export const EXERCISE_TYPE_MAP: Record<string, string> = {
 	Crunches: 'CRUNCH',
 	'Dead Hang': 'DEAD_HANG',
 	'Glute Kickback (Machine)': 'CABLE_KICKBACK',
+	'Glute Kickback': 'CABLE_KICKBACK',
 	'Glute Machine': 'HIP_STABILITY_GENERIC',
 	'Pec Deck / Chest Fly (Machine)': 'PEC_DECK_BUTTERFLY',
+	'Pec Deck': 'PEC_DECK_BUTTERFLY',
 	'Preacher Curl (Machine)': 'PREACHER_CURL_MACHINE',
+	'Preacher Curl': 'PREACHER_CURL_MACHINE',
 	'Torso Rotation (Machine)': 'CORE_GENERIC',
+	'Torso Rotation': 'CORE_GENERIC',
 	'Assisted Chin-Up (Machine)': 'ASSISTED_CHIN_UP',
 	Climbing: 'ROPE_CLIMB',
 
