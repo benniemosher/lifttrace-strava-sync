@@ -1,0 +1,42 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "lifttrace-strava-sync",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-09-16",
+	// node:crypto (timingSafeEqual, createHmac) for constant-time
+	// webhook-signature verification.
+	"compatibility_flags": ["nodejs_compat"],
+	"observability": {
+		"enabled": true
+	},
+	"upload_source_maps": true,
+	/**
+	 * Environment Variables
+	 * STRAVA_CLIENT_SECRET and LIFTTRACE_WEBHOOK_SECRET are set as
+	 * secrets (`wrangler secret put <NAME>`), not here — never commit
+	 * those values. STRAVA_CLIENT_ID isn't sensitive (it's visible in
+	 * the OAuth redirect URL anyway) so it's a plain var.
+	 */
+	"vars": {
+		// TODO: fill in from your Strava API app registration
+		// (strava.com/settings/api).
+		"STRAVA_CLIENT_ID": ""
+	},
+	/**
+	 * KV — stores the single Strava access/refresh token pair for this
+	 * relay's one connected account. Single-user by design; see
+	 * README.md for what a multi-tenant version would need to change.
+	 */
+	"kv_namespaces": [
+		{
+			"binding": "STRAVA_TOKENS",
+			// TODO: replace with the real id from
+			// `wrangler kv namespace create STRAVA_TOKENS`
+			"id": "REPLACE_ME"
+		}
+	]
+}
