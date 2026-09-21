@@ -53,7 +53,13 @@ export const EXERCISE_TYPE_MAP: Record<string, string> = {
 	Adductor: 'MACHINE_HIP_ADDUCTION',
 	'Hip Abductor (Machine)': 'MACHINE_HIP_ABDUCTION',
 	'Squat (Smith Machine)': 'SMITH_MACHINE_SQUAT',
-	'Romanian Deadlift (Smith Machine)': 'BARBELL_GOOD_MORNING',
+	// No Smith-machine-specific RDL exists in Strava's catalog; the
+	// closest match previously used here (BARBELL_GOOD_MORNING) is a
+	// genuinely different lift, so both the Smith-machine and plain-
+	// barbell log entries now point at the real RDL identifier instead.
+	'Romanian Deadlift (Smith Machine)': 'BARBELL_ROMANIAN_DEADLIFT',
+	'Romanian Deadlift': 'BARBELL_ROMANIAN_DEADLIFT',
+	'Dumbbell Lunge': 'DUMBBELL_WALKING_LUNGES',
 
 	// Other / occasional
 	'Back Extension (Machine)': 'MACHINE_BACK_EXTENSION',
@@ -63,6 +69,7 @@ export const EXERCISE_TYPE_MAP: Record<string, string> = {
 	'Glute Kickback (Machine)': 'CABLE_KICKBACK',
 	'Glute Kickback': 'CABLE_KICKBACK',
 	'Glute Machine': 'HIP_STABILITY_GENERIC',
+	'Machine glute extension': 'MACHINE_GLUTE_KICKBACK',
 	'Pec Deck / Chest Fly (Machine)': 'PEC_DECK_BUTTERFLY',
 	'Pec Deck': 'PEC_DECK_BUTTERFLY',
 	'Preacher Curl (Machine)': 'PREACHER_CURL_MACHINE',
@@ -70,6 +77,7 @@ export const EXERCISE_TYPE_MAP: Record<string, string> = {
 	'Torso Rotation (Machine)': 'CORE_GENERIC',
 	'Torso Rotation': 'CORE_GENERIC',
 	'Assisted Chin-Up (Machine)': 'ASSISTED_CHIN_UP',
+	'Assisted chin-ups': 'ASSISTED_CHIN_UP',
 	Climbing: 'ROPE_CLIMB',
 
 	// Deliberately NOT mapped: Walking, Running (Treadmill) — cardio, not
