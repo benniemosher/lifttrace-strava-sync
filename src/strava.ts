@@ -98,21 +98,23 @@ function fmtSet(s: { weight: number | null; reps: number | null; duration_sec: n
 const MAX_UTC_OFFSET_MS = 14 * 60 * 60 * 1000;
 
 /**
- * Strava start for a workout. completedAtIso is when the workout was marked
- * done (the webhook's own `timestamp`). For a workout completed on its own day,
- * treat that as the activity's END and back-compute a start, so Strava's
- * timeline lines up with when it actually finished. A workout logged after the
- * fact (completed on a later day than its `date`) has no real time of day, so
- * it starts at noon local on its own date rather than on the day it was entered.
+ * Strava start for a workout, as a UTC instant. completedAtIso is when the
+ * workout was marked done (the webhook's own `timestamp`). For a workout
+ * completed on its own day, treat that as the activity's END and back-compute a
+ * start, so Strava's timeline lines up with when it actually finished. A
+ * workout logged after the fact (completed on a later day than its `date`) has
+ * no real time of day, so it starts at noon in the athlete's time zone on its
+ * own date rather than on the day it was entered. Used by both the Set
+ * Messages upload and the plain create-activity fallback.
  */
-export function activityStart(workoutDate: string, completedAtIso: string, elapsedSeconds: number): string {
+export function activityStart(workoutDate: string, completedAtIso: string, elapsedSeconds: number): Date {
 	const completedAt = new Date(completedAtIso).getTime();
 	const dateEndsUtc = new Date(`${workoutDate}T23:59:59.999Z`).getTime();
 	if (/^\d{4}-\d{2}-\d{2}$/.test(workoutDate) && completedAt - dateEndsUtc > MAX_UTC_OFFSET_MS) {
-		// No offset: Strava reads start_date_local as the athlete's wall-clock time.
-		return `${workoutDate}T12:00:00`;
+		const noonUtc = new Date(`${workoutDate}T12:00:00Z`);
+		return new Date(noonUtc.getTime() - getUtcOffsetSeconds(noonUtc, ATHLETE_TIME_ZONE) * 1000);
 	}
-	return new Date(completedAt - elapsedSeconds * 1000).toISOString();
+	return new Date(completedAt - elapsedSeconds * 1000);
 }
 
 export function buildStravaActivity(workout: LiftTraceWorkout, completedAtIso: string) {
@@ -123,7 +125,7 @@ export function buildStravaActivity(workout: LiftTraceWorkout, completedAtIso: s
 
 	const elapsedSeconds = workout.duration_min != null ? Math.round(workout.duration_min * 60) : DEFAULT_ELAPSED_SECONDS;
 
-	const startDateLocal = activityStart(workout.date, completedAtIso, elapsedSeconds);
+	const startDateLocal = activityStart(workout.date, completedAtIso, elapsedSeconds).toISOString();
 
 	// Strava's activity API has no muscle-group field at all — this is
 	// folded into the description text instead. Exercises with no entry
@@ -202,7 +204,7 @@ export interface StravaSetMessagesActivity {
  * buildStravaActivity/createStravaActivity in that case. */
 export function buildSetMessages(workout: LiftTraceWorkout, completedAtIso: string): StravaSetMessagesActivity | null {
 	const elapsedSeconds = workout.duration_min != null ? Math.round(workout.duration_min * 60) : DEFAULT_ELAPSED_SECONDS;
-	const startDate = new Date(new Date(completedAtIso).getTime() - elapsedSeconds * 1000);
+	const startDate = activityStart(workout.date, completedAtIso, elapsedSeconds);
 
 	const sets: StravaSetMessage[] = [];
 	const lines: string[] = [];
